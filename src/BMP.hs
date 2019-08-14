@@ -17,13 +17,10 @@ generateBMPHeader width height =
     let headerSize = 54
         bitmapSize = ceiling (fromIntegral (width * 3) / 4) * 4 * height
         fileSize = headerSize + bitmapSize
-    in "BM" ++ (
-            toString 4 =<< [fileSize, 0, headerSize, 40, width, height]
-        ) ++ (
-            toString 2 =<< [1, 24]
-        ) ++ (
-            toString 4 =<< [0, bitmapSize, 2835, 2835, 0, 0]
-        )
+    in "BM" ++
+        (toString 4 =<< [fileSize, 0, headerSize, 40, width, height]) ++
+        (toString 2 =<< [1, 24]) ++
+        (toString 4 =<< [0, bitmapSize, 2835, 2835, 0, 0])
 
 
 extractBMPHeaderDimensions :: String -> (Int, Int)
