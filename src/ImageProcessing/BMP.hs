@@ -47,11 +47,11 @@ bitmapFromString width s =
 
 
 bitmapToString :: Bitmap -> String
+bitmapToString [] = ""
 bitmapToString bitmap =
     let width = length $ head bitmap
         gap = replicate (rowSize width - (width * 3)) '\0'
-    in (++ gap) =<<
-        reverse (concatMap (\ (r, g, b) ->
+    in (++ gap) =<< reverse (concatMap (\ (r, g, b) ->
             toEnum . (`mod` 0x100) . round . (* 0xFF) <$> [b, g, r]
         ) <$> bitmap)
 
@@ -61,11 +61,4 @@ saveBMP out bitmap =
     let (width, height) = bitmapDimensions bitmap
     in BS.writeFile out $ runPut $ mapM_ putWord8 $ toEnum . fromEnum <$>
         generateBMPHeader width height ++ bitmapToString bitmap
-
-
-sampleBMP :: Bitmap
-sampleBMP = [ [
-    (x / 800, y / 600, sqrt ((x - 400)^2 + (y - 300)^2) / 500)
-    | x <- [0..800] ]
-    | y <- [0..600] ]
 
