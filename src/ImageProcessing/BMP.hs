@@ -40,7 +40,7 @@ extractBMPHeaderDimensions header = (
 
 bitmapFromString :: Int -> String -> Bitmap
 bitmapFromString width s =
-    map (\ p ->
+    reverse $ map (\ p ->
         let [b, g, r] = (/ 0xFF) . fromIntegral . fromEnum <$> p
         in (r, g, b)
     ) . take width . groupsOf 3 <$> groupsOf (rowSize width) s
@@ -54,6 +54,23 @@ bitmapToString bitmap =
     in (++ gap) =<< reverse (concatMap (\ (r, g, b) ->
             toEnum . (`mod` 0x100) . round . (* 0xFF) <$> [b, g, r]
         ) <$> bitmap)
+
+
+fileToString :: Get String
+fileToString = do
+    empty <- isEmpty
+    if empty then return "" else do
+        c <- getWord8
+        cs <- fileToString
+        return $ toEnum (fromEnum c) : cs
+
+
+readBMP :: FilePath -> IO Bitmap
+readBMP file = do
+    input <- BS.readFile file
+    let str = runGet fileToString input
+        (width, _) = extractBMPHeaderDimensions str
+    return $ bitmapFromString width (drop 54 str)
 
 
 saveBMP :: FilePath -> Bitmap -> IO ()
