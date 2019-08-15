@@ -1,6 +1,6 @@
 module Main where
 
-import BMP
+import ImageProcessing.BMP
 
 main :: IO ()
 main = return ()
