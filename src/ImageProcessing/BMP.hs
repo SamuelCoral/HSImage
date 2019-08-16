@@ -42,7 +42,7 @@ bitmapFromString :: Int -> String -> Bitmap
 bitmapFromString width s =
     reverse $ map (\ p ->
         let [b, g, r] = (/ 0xFF) . fromIntegral . fromEnum <$> p
-        in (r, g, b)
+        in (r, g, b, 1)
     ) . take width . groupsOf 3 <$> groupsOf (rowSize width) s
 
 
@@ -51,7 +51,7 @@ bitmapToString [] = ""
 bitmapToString bitmap =
     let width = length $ head bitmap
         gap = replicate (rowSize width - (width * 3)) '\0'
-    in (++ gap) =<< reverse (concatMap (\ (r, g, b) ->
+    in (++ gap) =<< reverse (concatMap (\ (r, g, b, _) ->
             toEnum . (`mod` 0x100) . round . (* 0xFF) <$> [b, g, r]
         ) <$> bitmap)
 

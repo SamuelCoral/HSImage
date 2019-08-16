@@ -1,9 +1,16 @@
 module ImageProcessing.Types where
 
 
-type Pixel = (Double, Double, Double)
+type Color = (Double, Double, Double, Double)
 
-type Bitmap = [[Pixel]]
+type Bitmap = [[Color]]
+
+type E a = a -> a
+
+
+
+transparent :: Color
+transparent = (0, 0, 0, 0)
 
 
 groupsOf :: Int -> [a] -> [[a]]
@@ -20,7 +27,7 @@ bitmapDimensions _ = (0, 0)
 
 sampleBitmap :: Bitmap
 sampleBitmap = [ [
-    (x / 800, y / 600, sqrt ((x - 400)^2 + (y - 300)^2) / 500)
+    (x / 800, y / 600, sqrt ((x - 400)^2 + (y - 300)^2) / 500, 1)
     | x <- [0..800] ]
     | y <- [0..600] ]
 
