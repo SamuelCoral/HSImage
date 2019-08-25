@@ -1,7 +1,6 @@
 module ImageProcessing.Drawing where
 
 import ImageProcessing.Types
-import Control.Lens
 
 
 pasteOver :: (Int, Int) -> Bitmap -> E Bitmap

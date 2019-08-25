@@ -1,11 +1,18 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, TemplateHaskell #-}
 module ImageProcessing.Types where
 
 import Control.Lens
 
 
-data Color = RGBA Double Double Double Double
-    deriving (Show, Read, Eq, Ord)
+data Color = RGBA {
+    _red    :: Double,
+    _green  :: Double,
+    _blue   :: Double,
+    _alpha  :: Double
+} deriving (Show, Read, Eq, Ord)
+
+$(makeLenses ''Color)
+
 
 type Bitmap = [[Color]]
 

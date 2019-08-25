@@ -1,6 +1,7 @@
 module ImageProcessing.Color where
 
 import ImageProcessing.Types
+import Control.Lens
 
 
 colorMask :: Color -> E Color
@@ -59,4 +60,16 @@ grayShades :: Int -> E Color
 grayShades n (RGBA r g b a) =
     let f = 1 / fromIntegral (pred n)
     in grayScale ((((r + g + b) / 3 / f) + 0.5) * f) a
+
+
+onlyRedChannel :: E Color
+onlyRedChannel (RGBA r _ _ a) = RGBA r 0 0 a
+
+
+onlyGreenChannel :: E Color
+onlyGreenChannel (RGBA _ g _ a) = RGBA 0 g 0 a
+
+
+onlyBlueChannel :: E Color
+onlyBlueChannel (RGBA _ _ b a) = RGBA 0 0 b a
 
