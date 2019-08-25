@@ -1,7 +1,11 @@
+{-# LANGUAGE RankNTypes #-}
 module ImageProcessing.Types where
+
+import Control.Lens
 
 
 data Color = RGBA Double Double Double Double
+    deriving (Show, Read, Eq, Ord)
 
 type Bitmap = [[Color]]
 
@@ -24,6 +28,25 @@ instance Semigroup Color where
 
 instance Monoid Color where
     mempty = transparent
+
+
+pixels :: Traversal' Bitmap Color
+pixels = traverse . traverse
+
+
+pixel :: (Int, Int) -> Traversal' Bitmap Color
+pixel (x, y) = ix y . ix x
+
+
+getPixel :: (Int, Int) -> Bitmap -> Color
+getPixel (x, y) bitmap = case bitmap ^? pixel (x, y) of
+    Just p  -> p
+    _       -> transparent
+    
+
+putPixel :: (Int, Int) -> Color -> E Bitmap
+putPixel (x, y) color bitmap = bitmap & pixel (x, y) .~
+    (color <> getPixel (x, y) bitmap)
 
 
 groupsOf :: Int -> [a] -> [[a]]
