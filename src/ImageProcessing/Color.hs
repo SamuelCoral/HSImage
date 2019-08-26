@@ -57,8 +57,8 @@ repeatBlueChannel (RGBA _ _ b a) = grayScale b a
 
 grayShades :: Int -> E Color
 grayShades n (RGBA r g b a) =
-    let f = 1 / fromIntegral (pred n)
-    in grayScale ((((r + g + b) / 3 / f) + 0.5) * f) a
+    let m = fromIntegral $ pred n
+    in grayScale (fromIntegral (round $ m * (r + g + b) / 3) / m) a
 
 
 onlyRedChannel :: E Color
@@ -71,4 +71,8 @@ onlyGreenChannel (RGBA _ g _ a) = RGBA 0 g 0 a
 
 onlyBlueChannel :: E Color
 onlyBlueChannel (RGBA _ _ b a) = RGBA 0 0 b a
+
+
+invertColor :: E Color
+invertColor (RGBA r g b a) = RGBA (1 - r) (1 - g) (1 - b) a
 
