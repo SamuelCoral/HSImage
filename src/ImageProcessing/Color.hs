@@ -1,7 +1,6 @@
 module ImageProcessing.Color where
 
 import ImageProcessing.Types
-import Control.Lens
 
 
 colorMask :: Color -> E Color

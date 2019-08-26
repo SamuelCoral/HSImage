@@ -25,7 +25,10 @@ transparent = RGBA 0 0 0 0
 
 
 instance Semigroup Color where
-    (RGBA r1 g1 b1 a1) <> (RGBA r2 g2 b2 a2) =
+    (RGBA r1 g1 b1 a1) <> (RGBA r2 g2 b2 a2)
+        | a1 == 0 = RGBA r2 g2 b2 a2
+        | a1 == 1 = RGBA r1 g1 b1 a1
+        | otherwise =
         let a3 = a1 + a2 * (1 - a1)
             [r3, g3, b3] = (\ (c1, c2) ->
                     (c1 * a1 + c2 * a2 * (1 - a1)) / a3
