@@ -2,3 +2,4 @@
 ImageProcessing.cabal
 *~
 *.bmp
+.vscode/
