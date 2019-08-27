@@ -16,6 +16,8 @@ $(makeLenses ''Color)
 
 type Bitmap = [[Color]]
 
+type Point = (Int, Int)
+
 type E a = a -> a
 
 
@@ -44,19 +46,19 @@ pixels :: Traversal' Bitmap Color
 pixels = traverse . traverse
 
 
-pixel :: (Int, Int) -> Traversal' Bitmap Color
+pixel :: Point -> Traversal' Bitmap Color
 pixel (x, y) = ix y . ix x
 
 
-getPixel :: (Int, Int) -> Bitmap -> Color
-getPixel (x, y) bitmap = case bitmap ^? pixel (x, y) of
-    Just p  -> p
+getPixel :: Point -> Bitmap -> Color
+getPixel p bitmap = case bitmap ^? pixel p of
+    Just c  -> c
     _       -> transparent
     
 
-putPixel :: (Int, Int) -> Color -> E Bitmap
-putPixel (x, y) color bitmap = bitmap & pixel (x, y) .~
-    (color <> getPixel (x, y) bitmap)
+putPixel :: Point -> Color -> E Bitmap
+putPixel p color bitmap = bitmap & pixel p .~
+    color <> getPixel p bitmap
 
 
 groupsOf :: Int -> [a] -> [[a]]
@@ -66,7 +68,7 @@ groupsOf n l =
     in [h] ++ groupsOf n t
 
 
-bitmapDimensions :: Bitmap -> (Int, Int)
+bitmapDimensions :: Bitmap -> Point
 bitmapDimensions (r:rs) = (length r, length (r:rs))
 bitmapDimensions _ = (0, 0)
 
