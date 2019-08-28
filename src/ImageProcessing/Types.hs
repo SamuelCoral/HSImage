@@ -2,13 +2,14 @@
 module ImageProcessing.Types where
 
 import Control.Lens
+import GHC.Word
 
 
 data Color = RGBA {
-    _red    :: Double,
-    _green  :: Double,
-    _blue   :: Double,
-    _alpha  :: Double
+    _red    :: Word8,
+    _green  :: Word8,
+    _blue   :: Word8,
+    _alpha  :: Word8
 } deriving (Show, Read, Eq, Ord)
 
 $(makeLenses ''Color)
@@ -31,9 +32,9 @@ instance Semigroup Color where
         | a1 == 0 = RGBA r2 g2 b2 a2
         | a1 == 1 = RGBA r1 g1 b1 a1
         | otherwise =
-        let a3 = a1 + a2 * (1 - a1)
+        let a3 = a1 + a2 * (0xFF - a1)
             [r3, g3, b3] = (\ (c1, c2) ->
-                    (c1 * a1 + c2 * a2 * (1 - a1)) / a3
+                    (c1 * a1 + c2 * a2 * (0xFF - a1)) `div` a3
                 ) <$> [(r1, r2), (g1, g2), (b1, b2)]
         in RGBA r3 g3 b3 a3
 
@@ -75,7 +76,10 @@ bitmapDimensions _ = (0, 0)
 
 sampleBitmap :: Bitmap
 sampleBitmap = [ [
-    RGBA (x / 800) (y / 600) (sqrt ((x - 400)^2 + (y - 300)^2) / 500) 1
-    | x <- [0..800] ]
-    | y <- [0..600] ]
+    RGBA (toEnum $ 0xFF * x `div` 800)
+        (toEnum $ 0xFF * y `div` 600)
+        (round $ 0xFF * sqrt ((fromIntegral x - 400)^2 + (fromIntegral y - 300)^2) / 500)
+        1
+    | x <- [1..800] ]
+    | y <- [1..600] ]
 

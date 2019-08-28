@@ -43,10 +43,8 @@ extractBMPHeaderDimensions header = (
 
 bitmapFromBytes :: Int -> [Word8] -> Bitmap
 bitmapFromBytes width s =
-    reverse $ map (\ p ->
-        let [b, g, r] = (/ 0xFF) . fromIntegral . fromEnum <$> p
-        in RGBA r g b 1
-    ) . take width . groupsOf 3 <$> groupsOf (rowSize width) s
+    reverse $ map (\ [b, g, r] -> RGBA r g b 1) .
+        take width . groupsOf 3 <$> groupsOf (rowSize width) s
 
 
 bitmapToBytes :: Bitmap -> [Word8]
@@ -54,9 +52,7 @@ bitmapToBytes [] = []
 bitmapToBytes bitmap =
     let width = length $ head bitmap
         gap = replicate (rowSize width - (width * 3)) 0
-    in (++ gap) =<< reverse (concatMap (\ (RGBA r g b _) ->
-            toEnum . (`mod` 0x100) . round . (* 0xFF) <$> [b, g, r]
-        ) <$> bitmap)
+    in (++ gap) =<< reverse (concatMap (\ (RGBA r g b _) -> [b, g, r]) <$> bitmap)
 
 
 readBMP :: FilePath -> IO Bitmap

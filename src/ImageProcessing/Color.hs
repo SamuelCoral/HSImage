@@ -1,38 +1,43 @@
 module ImageProcessing.Color where
 
 import ImageProcessing.Types
+import Data.Bits
+import GHC.Word
 
 
 colorMask :: Color -> E Color
-colorMask (RGBA fr fg fb fa) (RGBA r g b a) = RGBA (fr * r) (fg * g) (fb * b) (fa * a)
+colorMask (RGBA fr fg fb fa) (RGBA r g b a) =
+    RGBA (fr .&. r) (fg .&. g) (fb .&. b) (fa .&. a)
 
 
-grayScale :: Double -> Double -> Color
+grayScale :: Word8 -> Word8 -> Color
 grayScale s a = RGBA s s s a
 
 
-luma :: Color -> E Color
-luma (RGBA fr fg fb _) (RGBA r g b a) = grayScale (fr * r + fg * g + fb * b) a
+luma :: Float -> Float -> Float -> E Color
+luma fr fg fb (RGBA r g b a) = grayScale
+    (round $ sum $ zipWith (*) [fr, fg, fb] $ fromIntegral <$> [r, g, b]) a
 
 
 colorAverage :: E Color
-colorAverage (RGBA r g b a) = grayScale ((r + g + b) / 3) a
+colorAverage (RGBA r g b a) = grayScale (toEnum $ (sum $ fromEnum <$> [r, g, b]) `div` 3) a
 
 
 lumaPhotoshop :: E Color
-lumaPhotoshop = luma $ RGBA 0.3 0.59 0.11 1
+lumaPhotoshop = luma 0.3 0.59 0.11
 
 
 lumaBT709 :: E Color
-lumaBT709 = luma $ RGBA 0.2126 0.7152 0.0722 1
+lumaBT709 = luma 0.2126 0.7152 0.0722
 
 
 lumaBT601 :: E Color
-lumaBT601 = luma $ RGBA 0.299 0.587 0.114 1
+lumaBT601 = luma 0.299 0.587 0.114
 
 
 desaturation :: E Color
-desaturation (RGBA r g b a) = grayScale ((maximum [r, g, b] + minimum [r, g, b]) / 2) a
+desaturation (RGBA r g b a) = grayScale
+    (toEnum $ (sum $ fromEnum <$> [maximum [r, g, b], minimum [r, g, b]]) `div` 2) a
 
 
 maxDecomposition :: E Color
@@ -57,8 +62,9 @@ repeatBlueChannel (RGBA _ _ b a) = grayScale b a
 
 grayShades :: Int -> E Color
 grayShades n (RGBA r g b a) =
-    let m = fromIntegral $ pred n
-    in grayScale (fromIntegral (round $ m * (r + g + b) / 3) / m) a
+    let m = 0xFF / fromIntegral (pred n)
+    in grayScale (round $ (fromIntegral $ round $
+        (sum $ fromIntegral <$> [r, g, b]) / (3 * m)) * m) a
 
 
 onlyRedChannel :: E Color
@@ -74,5 +80,5 @@ onlyBlueChannel (RGBA _ _ b a) = RGBA 0 0 b a
 
 
 invertColor :: E Color
-invertColor (RGBA r g b a) = RGBA (1 - r) (1 - g) (1 - b) a
+invertColor (RGBA r g b a) = RGBA (complement r) (complement g) (complement b) a
 
