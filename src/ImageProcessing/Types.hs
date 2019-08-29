@@ -9,7 +9,7 @@ data Color = RGBA {
     _red    :: Word8,
     _green  :: Word8,
     _blue   :: Word8,
-    _alpha  :: Word8
+    _alpha  :: Float
 } deriving (Show, Read, Eq, Ord)
 
 $(makeLenses ''Color)
@@ -32,11 +32,12 @@ instance Semigroup Color where
         | a1 == 0 = RGBA r2 g2 b2 a2
         | a1 == 1 = RGBA r1 g1 b1 a1
         | otherwise =
-        let a3 = a1 + a2 * (0xFF - a1)
-            [r3, g3, b3] = (\ (c1, c2) ->
-                    (c1 * a1 + c2 * a2 * (0xFF - a1)) `div` a3
-                ) <$> [(r1, r2), (g1, g2), (b1, b2)]
-        in RGBA r3 g3 b3 a3
+            let a3 = a1 + a2 * (1 - a1)
+                [r3, g3, b3] = round . (\ (c1, c2) ->
+                     (c1 * a1 + c2 * a2 * (1 - a1)) / a3
+                  ) . (\ (p, q) -> (fromIntegral p, fromIntegral q)) <$>
+                  [(r1, r2), (g1, g2), (b1, b2)]
+            in RGBA r3 g3 b3 a3
 
 
 instance Monoid Color where
