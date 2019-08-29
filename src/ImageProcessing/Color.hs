@@ -7,10 +7,10 @@ import GHC.Word
 
 colorMask :: Color -> E Color
 colorMask (RGBA fr fg fb fa) (RGBA r g b a) =
-    RGBA (fr .&. r) (fg .&. g) (fb .&. b) (fa .&. a)
+    RGBA (fr .&. r) (fg .&. g) (fb .&. b) (fa * a)
 
 
-grayScale :: Word8 -> Word8 -> Color
+grayScale :: Word8 -> Float -> Color
 grayScale s a = RGBA s s s a
 
 
