@@ -44,7 +44,7 @@ instance Monoid Color where
     mempty = transparent
 
 
-pixels :: Traversal' Bitmap Color
+pixels :: Traversal Bitmap [[b]] Color b
 pixels = traverse . traverse
 
 
