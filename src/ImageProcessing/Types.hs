@@ -23,8 +23,22 @@ type E a = a -> a
 
 
 
+infixl 6 `padd`
+padd :: Point -> E Point
+(a, b) `padd` (c, d) = (a + c, b + d)
+
+
+infixl 6 `psub`
+psub :: Point -> E Point
+(a, b) `psub` (c, d) = (a - c, b - d)
+
+
 transparent :: Color
 transparent = RGBA 0 0 0 0
+
+
+clearBitmap :: Point -> Color -> Bitmap
+clearBitmap (w, h) c = replicate h $ replicate w c
 
 
 instance Semigroup Color where
@@ -44,7 +58,7 @@ instance Monoid Color where
     mempty = transparent
 
 
-pixels :: Traversal Bitmap [[b]] Color b
+pixels :: Traversal [[a]] [[b]] a b
 pixels = traverse . traverse
 
 
