@@ -23,7 +23,7 @@ pointToVector (x, y) = (fromIntegral x, fromIntegral y)
 
 
 vectorToPoint :: Vector -> Point
-vectorToPoint (x, y) = (round x, round y)
+vectorToPoint (x, y) = (truncate x, truncate y)
 
 
 instance Num Matrix where
@@ -87,9 +87,9 @@ transformBitmap m op b op' b' =
     let m' = recip m
         o = pointToVector op
         o' = pointToVector op'
-        bi = (\ (r, l) ->
-                (\ (c, p) -> ((c, r), p) ) <$> zip [0..] l
-            ) <$> zip [0..] b'
-    in bi & pixels %~ \ (p', pix) -> getPixel (vectorToPoint $
-        m' *| (p' `vsub` o') `vadd` o) b <> pix
+    in  (\ (r, l) ->
+            (\ (c, pix) -> getPixel (vectorToPoint $
+                m' *| ((c, r) `vsub` o') `vadd` o) b <> pix
+            ) <$> zip [0..] l
+        ) <$> zip [0..] b'
 

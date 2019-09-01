@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 module ImageProcessing.Color where
 
 import ImageProcessing.Types
@@ -81,4 +82,25 @@ onlyBlueChannel (RGBA _ _ b a) = RGBA 0 0 b a
 
 invertColor :: E Color
 invertColor (RGBA r g b a) = RGBA (complement r) (complement g) (complement b) a
+
+
+intToWord8 :: Int -> Word8
+intToWord8
+    v   | v < 0     = 0
+        | v > 0xFF  = 0xFF
+        | otherwise = toEnum v
+
+
+adjustBrightness :: Int -> E Color
+adjustBrightness d (RGBA r g b a) =
+    let [r', g', b'] = intToWord8 . (+d) . fromEnum <$> [r, g, b]
+    in RGBA r' g' b' a
+
+
+adjustContrast :: Int -> E Color
+adjustContrast c (RGBA r g b a) =
+    let f = 259 * (fromIntegral c + 0xFF) / 255 / (259 - fromIntegral c)
+        [r', g', b'] = intToWord8 . (+0x80) . round . (*f) . (+(-0x80)) .
+            fromIntegral <$> [r, g, b]
+    in RGBA r' g' b' a
 
