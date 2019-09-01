@@ -74,11 +74,6 @@ infixr 7 *|
 (Matrix a b c d) *| (x, y) = (a * x + b * y, c * x + d * y)
 
 
-infixr 7 *^
-(*^) :: Float -> E Matrix
-f *^ (Matrix a b c d) = Matrix (f * a) (f * b) (f * c) (f * d)
-
-
 pasteOver :: Point -> Bitmap -> E Bitmap
 pasteOver (x, y) bitmap overBitmap =
     let bitmapIndexed = concat $ (\ (r, l) ->
