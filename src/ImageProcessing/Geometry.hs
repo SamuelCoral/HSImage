@@ -74,12 +74,23 @@ infixr 7 *|
 (Matrix a b c d) *| (x, y) = (a * x + b * y, c * x + d * y)
 
 
+fitIn :: Int -> Int -> a -> E [a]
+fitIn expectedWidth pos fill row =
+    let rowSize = length row
+        firstPart = if pos < 0
+            then drop (abs pos) row
+            else replicate pos fill ++ row
+        realRowLength = pos + rowSize
+    in  take expectedWidth firstPart ++ if realRowLength >= expectedWidth
+        then [] else replicate (expectedWidth - realRowLength) fill
+
+
 pasteOver :: Point -> Bitmap -> E Bitmap
 pasteOver (x, y) bitmap overBitmap =
-    let bitmapIndexed = concat $ (\ (r, l) ->
-                (\ (c, p) -> ((c, r), p) ) <$> zip [x..] l
-            ) <$> zip [y..] bitmap
-    in foldr (uncurry putPixel) overBitmap bitmapIndexed
+    let (w, h) = bitmapDimensions overBitmap
+        bitmap' = fitIn h y (replicate w transparent) $
+            fitIn w x transparent <$> bitmap
+    in  zipWith (zipWith (<>)) bitmap' overBitmap
 
 
 transformBitmap :: Matrix -> Point -> Bitmap -> Point -> E Bitmap
