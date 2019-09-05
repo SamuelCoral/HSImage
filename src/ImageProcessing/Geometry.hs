@@ -98,9 +98,9 @@ transformBitmap m op b op' b' =
     let m' = recip m
         o = pointToVector op
         o' = pointToVector op'
-    in  (\ (r, l) ->
-            (\ (c, pix) -> getPixel (vectorToPoint $
-                m' *| ((c, r) `vsub` o') `vadd` o) b <> pix
+    in  (\ (y, l) ->
+            (\ (x, pix) -> getPixel (vectorToPoint $
+                m' *| ((x, y) `vsub` o') `vadd` o) b <> pix
             ) <$> zip [0..] l
         ) <$> zip [0..] b'
 

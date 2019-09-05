@@ -11,8 +11,23 @@ count :: Ord k => [k] -> Map.Map k Integer
 count = foldr (uncurry $ Map.insertWith $ const succ) Map.empty . flip zip (repeat 1)
 
 
+accumSum :: Num a => [a] -> [a]
+accumSum = accumSumAux 0
+    where   accumSumAux ac (x:xs) =
+                let s = ac + x
+                in  s : accumSumAux s xs
+            accumSumAux _ _ = []
+            
+
 histogram :: E Color -> Bitmap -> Map.Map Word8 Integer
 histogram method = count . concat . over pixels (view red . method)
+
+
+accumHistogram :: E Color -> Bitmap -> Map.Map Word8 Integer
+accumHistogram method bitmap =
+    let hist = histogram method bitmap
+        (k, v) = accumSum <$> unzip (Map.toList hist)
+    in Map.fromList $ zip k v
 
 
 plotHistogram :: Color -> Map.Map Word8 Integer -> E Bitmap
