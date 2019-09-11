@@ -5,6 +5,7 @@ import Control.Lens
 import GHC.Word
 import ImageProcessing.Types
 import ImageProcessing.Geometry
+import ImageProcessing.Color
 import Data.Tuple
 
 
@@ -56,4 +57,18 @@ contrastLevel :: Histogram -> Word8
 contrastLevel hist =
     let h = [ x | x <- Map.keys hist, x /= 0 ]
     in  maximum h - minimum h
+
+
+dynamicLevel :: Histogram -> Int
+dynamicLevel = length
+
+
+adaptContrast :: Word8 -> Word8 -> E Color -> E Bitmap
+adaptContrast pmin' pmax' method bitmap =
+    let b = bitmap & pixels %~ fromEnum . view red . method
+        b' = concat b
+        (plow, phigh) = (minimum b', maximum b')
+        (pmin, pmax) = (fromEnum pmin', fromEnum pmax')
+    in  b & pixels %~ \ p -> grayScale (toEnum $ (p - plow) *
+            (pmax - pmin) `div` (phigh - plow) + pmin) 1
 
