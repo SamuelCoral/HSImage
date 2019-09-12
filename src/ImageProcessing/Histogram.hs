@@ -72,3 +72,12 @@ adaptContrast pmin' pmax' method bitmap =
     in  b & pixels %~ \ p -> grayScale (toEnum $ (p - plow) *
             (pmax - pmin) `div` (phigh - plow) + pmin) 1
 
+
+linearEqualization :: E Color -> E Bitmap
+linearEqualization method bitmap =
+    let dim = uncurry (*) $ bitmapDimensions bitmap
+        b = bitmap & pixels %~ view red . method
+        h = accumHistogram method bitmap
+    in  b & pixels %~ \ p -> grayScale (toEnum $
+            fromInteger (h ^. at p . non 0) * 0xFF `div` dim) 1
+
