@@ -77,7 +77,6 @@ linearEqualization :: E Color -> E Bitmap
 linearEqualization method bitmap =
     let dim = uncurry (*) $ bitmapDimensions bitmap
         b = bitmap & pixels %~ view red . method
-        h = accumHistogram method bitmap
-    in  b & pixels %~ \ p -> grayScale (toEnum $
-            fromInteger (h ^. at p . non 0) * 0xFF `div` dim) 1
+        h = accumHistogram method bitmap <&> (`div` dim) . (*0xFF) . fromInteger
+    in  b & pixels %~ \ p -> grayScale (toEnum $ h ^. at p . non 0) 1
 
