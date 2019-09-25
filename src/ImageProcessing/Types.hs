@@ -81,7 +81,7 @@ groupsOf :: Int -> [a] -> [[a]]
 groupsOf n [] = []
 groupsOf n l = 
     let (h, t) = splitAt n l
-    in [h] ++ groupsOf n t
+    in h : groupsOf n t
 
 
 bitmapDimensions :: Bitmap -> Point

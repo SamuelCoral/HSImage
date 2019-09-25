@@ -17,6 +17,7 @@ dependencies:
 - lens
 - binary
 - bytestring
+- comonad
 - base >= 4.7 && < 5
 name: ImageProcessing
 version: 0.1.0.0
