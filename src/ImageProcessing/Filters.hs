@@ -8,10 +8,10 @@ import ImageProcessing.Types
 import ImageProcessing.Color
 
 
-newtype Mask a = Mask { getMask :: [[a]] } deriving (Functor, Eq, Ord)
+newtype Grid a = Grid { getGrid :: [[a]] } deriving (Functor, Eq, Ord)
 
-instance Show a => Show (Mask a) where
-    show (Mask m) = m >>= (++ "\n") . show
+instance Show a => Show (Grid a) where
+    show (Grid m) = m >>= (++ "\n") . show
 
 
 instance Comonad [] where
@@ -28,9 +28,9 @@ duplicateMatrix :: [[a]] -> [[[[a]]]]
 duplicateMatrix = fmap duplicateHorizontal . duplicate
 
 
-instance Comonad Mask where
-    extract = head . head . getMask
-    duplicate = Mask . fmap (fmap Mask) . duplicateMatrix . getMask
+instance Comonad Grid where
+    extract = head . head . getGrid
+    duplicate = Grid . map (map Grid) . duplicateMatrix . getGrid
 
 
 normalizeVector :: E [Float]
@@ -47,10 +47,14 @@ m `conv` b =
         hGap = replicate y $ replicate (length (head b) + 2 * x) (-1)
         vGap = replicate x (-1)
         bb = hGap ++ ((++ vGap) . (vGap ++) <$> b') ++ hGap
-    in take h $ map (take w) $ getMask $ Mask bb =>> \ (Mask n) ->
+    in take h $ map (take w) $ getGrid $ Grid bb =>> \ (Grid n) ->
         let v = round $ sum $ uncurry (zipWith (*)) $ fmap normalizeVector $ unzip $
                 filter ((>= 0) . fst) $ concat $ zipWith zip n m
         in RGBA v v v 1
+
+
+gridBox :: Int -> [[Float]]
+gridBox n = replicate n $ replicate n 1
 
 
 gaussian :: Int -> [[Float]]
