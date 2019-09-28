@@ -6,6 +6,7 @@ import Data.List
 import Control.Lens
 import ImageProcessing.Types
 import ImageProcessing.Color
+import GHC.Word
 
 
 newtype Grid a = Grid { getGrid :: [[a]] } deriving (Functor, Eq, Ord)
@@ -39,18 +40,51 @@ normalizeVector m =
     in (/s) <$> m
 
 
-conv :: [[Float]] -> E Bitmap
-m `conv` b =
+addBorder :: Num a => Int -> Int -> E [[a]]
+addBorder x y b =
+    let hGap = replicate y $ replicate (length (head b) + 2 * x) (-1)
+        vGap = replicate x (-1)
+    in hGap ++ ((++ vGap) . (vGap ++) <$> b) ++ hGap
+
+
+floatToWord8 :: Float -> Word8
+floatToWord8
+    v   | v < 0     = 0
+        | v > 0xFF  = 0xFF
+        | otherwise = round v
+
+
+conv :: E [Float] -> (Float -> Word8) -> [[Float]] -> E Bitmap
+conv mop pop m b =
     let b' = b & pixels %~ fromIntegral . view red . colorAverage
         ((w, h), (x, y)) = _2 . both %~ (`div` 2) $
             (b', m) & both %~ \ p -> (length $ head p, length p)
-        hGap = replicate y $ replicate (length (head b) + 2 * x) (-1)
-        vGap = replicate x (-1)
-        bb = hGap ++ ((++ vGap) . (vGap ++) <$> b') ++ hGap
-    in take h $ map (take w) $ getGrid $ Grid bb =>> \ (Grid n) ->
-        let v = round $ sum $ uncurry (zipWith (*)) $ fmap normalizeVector $ unzip $
+    in take h $ map (take w) $ getGrid $ Grid (addBorder x y b') =>> \ (Grid n) ->
+        let v = pop $ sum $ uncurry (zipWith (*)) $ fmap mop $ unzip $
                 filter ((>= 0) . fst) $ concat $ zipWith zip n m
         in RGBA v v v 1
+
+
+(<**>) :: [[Float]] -> E Bitmap
+m <**> b = conv normalizeVector round m b
+
+
+(<|**|>) :: [[Float]] -> E Bitmap
+m <|**|> b = conv id floatToWord8 m b
+
+
+nonLinearFilter :: Int -> ([Word8] -> Word8) -> E Bitmap
+nonLinearFilter n s b =
+    let b' = b & pixels %~ fromEnum . view red . colorAverage
+        (w, h) = (length $ head b, length b)
+        x = n `div` 2
+    in take h $ map (take w) $ getGrid $ Grid (addBorder x x b') =>> \ (Grid m) ->
+        let v = s [ toEnum y | y <- concat $ take n <$> take n m, y >= 0 ]
+        in RGBA v v v 1
+
+
+median :: Ord a => [a] -> a
+median l = sort l !! (length l `div` 2)
 
 
 gridBox :: Int -> [[Float]]
