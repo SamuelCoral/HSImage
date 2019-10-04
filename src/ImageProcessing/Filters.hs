@@ -7,6 +7,7 @@ import Control.Lens
 import ImageProcessing.Types
 import ImageProcessing.Color
 import GHC.Word
+import Data.Foldable
 
 
 newtype Grid a = Grid { getGrid :: [[a]] } deriving (Functor, Eq, Ord)
@@ -26,7 +27,7 @@ duplicateHorizontal m = m : duplicateHorizontal (tail <$> m)
 
 
 duplicateMatrix :: [[a]] -> [[[[a]]]]
-duplicateMatrix = fmap duplicateHorizontal . duplicate
+duplicateMatrix = map duplicateHorizontal . duplicate
 
 
 instance Comonad Grid where
@@ -83,8 +84,8 @@ nonLinearFilter n s b =
         in RGBA v v v 1
 
 
-median :: Ord a => [a] -> a
-median l = sort l !! (length l `div` 2)
+median :: (Foldable t, Ord a) => t a -> a
+median l = sort (toList l) !! (length l `div` 2)
 
 
 gridBox :: Int -> [[Float]]
