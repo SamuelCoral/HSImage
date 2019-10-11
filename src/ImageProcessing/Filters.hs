@@ -73,11 +73,11 @@ filterImage mop pop ptr inner outter m b =
 
 
 (<**>) :: [[Float]] -> E Bitmap
-m <**> b = filterImage normalizeVector round fromIntegral (*) sum m b
+(<**>) = filterImage normalizeVector round fromIntegral (*) sum
 
 
 (<|**|>) :: [[Float]] -> E Bitmap
-m <|**|> b = filterImage id floatToWord8 fromIntegral (*) sum m b
+(<|**|>) = filterImage id floatToWord8 fromIntegral (*) sum
 
 
 nonLinearFilter :: Int -> ([Word8] -> Word8) -> E Bitmap
@@ -85,11 +85,24 @@ nonLinearFilter n s = filterImage id id id const s $ squareMatrix n 0
 
 
 (<*|*>) :: [[Bool]] -> E Bitmap
-m <*|*> b = filterImage id boolToWord8 (>= 0x80) (&&) or m b
+(<*|*>) = filterImage id boolToWord8 (>= 0x80) (&&) or
 
 
 (<*&*>) :: [[Bool]] -> E Bitmap
-m <*&*> b = filterImage id boolToWord8 (>= 0x80) (\ p q -> not q || p) and m b
+(<*&*>) = filterImage id boolToWord8 (>= 0x80) (\ p q -> not q || p) and
+
+
+(<*|&*>) :: [[Bool]] -> E Bitmap
+m <*|&*> b = m <*|*> (m <*&*> b)
+
+
+(<*&|*>) :: [[Bool]] -> E Bitmap
+m <*&|*> b = m <*&*> (m <*|*> b)
+
+
+edgeDetection :: [[Bool]] -> E Bitmap
+edgeDetection m b = zipWith (zipWith (\ p q -> grayScale (boolToWord8 $ p /= q) 1))
+    (m <*&*> b) (m <*|*> b)
 
 
 median :: (Foldable t, Ord a) => t a -> a

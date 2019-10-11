@@ -12,7 +12,7 @@ colorMask (RGBA fr fg fb fa) (RGBA r g b a) =
 
 
 grayScale :: Word8 -> Float -> Color
-grayScale s a = RGBA s s s a
+grayScale s = RGBA s s s
 
 
 luma :: Float -> Float -> Float -> E Color
