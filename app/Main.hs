@@ -30,4 +30,4 @@ main = do
             (flip putPixel (RGBA 0xFF 0xFF 0xFF 1) <$> ws)
     
     saveBMP "noisy.bmp" noisy
-    saveBMP "filterednl.bmp" $ nonLinearFilter 5 maximum noisy
+    saveBMP "filterednl.bmp" $ nonLinearFilter 5 median noisy

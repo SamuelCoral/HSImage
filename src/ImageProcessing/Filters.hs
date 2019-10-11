@@ -8,6 +8,8 @@ import ImageProcessing.Types
 import ImageProcessing.Color
 import GHC.Word
 import Data.Foldable
+import Data.Maybe
+import Data.Tuple
 
 
 newtype Grid a = Grid { getGrid :: [[a]] } deriving (Functor, Eq, Ord)
@@ -41,11 +43,11 @@ normalizeVector m =
     in (/s) <$> m
 
 
-addBorder :: Num a => Int -> Int -> E [[a]]
+addBorder :: Int -> Int -> [[a]] -> [[Maybe a]]
 addBorder x y b =
-    let hGap = replicate y $ replicate (length (head b) + 2 * x) (-1)
-        vGap = replicate x (-1)
-    in hGap ++ ((++ vGap) . (vGap ++) <$> b) ++ hGap
+    let hGap = replicate y $ replicate (length (head b) + 2 * x) Nothing
+        vGap = replicate x Nothing
+    in hGap ++ ((++ vGap) . (vGap ++) . map Just <$> b) ++ hGap
 
 
 floatToWord8 :: Float -> Word8
@@ -55,41 +57,47 @@ floatToWord8
         | otherwise = round v
 
 
-conv :: E [Float] -> (Float -> Word8) -> [[Float]] -> E Bitmap
-conv mop pop m b =
-    let b' = b & pixels %~ fromIntegral . view red . colorAverage
+conv :: E [a] -> (a -> Word8) -> (Word8 -> a) -> (a -> E a) -> ([a] -> a) -> [[a]] -> E Bitmap
+conv mop pop ptr inner outter m b =
+    let b' = b & pixels %~ ptr . view red . colorAverage
         ((w, h), (x, y)) = _2 . both %~ (`div` 2) $
             (b', m) & both %~ \ p -> (length $ head p, length p)
     in take h $ map (take w) $ getGrid $ Grid (addBorder x y b') =>> \ (Grid n) ->
-        let v = pop $ sum $ uncurry (zipWith (*)) $ fmap mop $ unzip $
-                filter ((>= 0) . fst) $ concat $ zipWith zip n m
+        let v = pop $ outter $ uncurry (zipWith inner) $ fmap mop $
+                swap $ unzip $ mapMaybe sequence $ concat $ zipWith zip m n
         in RGBA v v v 1
 
 
 (<**>) :: [[Float]] -> E Bitmap
-m <**> b = conv normalizeVector round m b
+m <**> b = conv normalizeVector round fromIntegral (*) sum m b
 
 
 (<|**|>) :: [[Float]] -> E Bitmap
-m <|**|> b = conv id floatToWord8 m b
+m <|**|> b = conv id floatToWord8 fromIntegral (*) sum m b
 
 
 nonLinearFilter :: Int -> ([Word8] -> Word8) -> E Bitmap
-nonLinearFilter n s b =
-    let b' = b & pixels %~ fromEnum . view red . colorAverage
-        (w, h) = (length $ head b, length b)
-        x = n `div` 2
-    in take h $ map (take w) $ getGrid $ Grid (addBorder x x b') =>> \ (Grid m) ->
-        let v = s [ toEnum y | y <- concat $ take n <$> take n m, y >= 0 ]
-        in RGBA v v v 1
+nonLinearFilter n s = conv id id id const s $ squareMatrix n 0
+
+
+(<*|*>) :: [[Bool]] -> E Bitmap
+m <*|*> b = conv id (\ p -> if p then 0xFF else 0) (>= 0x80) (&&) or m b
+
+
+(<*&*>) :: [[Bool]] -> E Bitmap
+m <*&*> b = conv id (\ p -> if p then 0xFF else 0) (>= 0x80) (\ p q -> not q || p) and m b
 
 
 median :: (Foldable t, Ord a) => t a -> a
 median l = sort (toList l) !! (length l `div` 2)
 
 
+squareMatrix :: Int -> a -> [[a]]
+squareMatrix n = replicate n . replicate n
+
+
 gridBox :: Int -> [[Float]]
-gridBox n = replicate n $ replicate n 1
+gridBox n = squareMatrix n 1
 
 
 gaussian :: Int -> [[Float]]
