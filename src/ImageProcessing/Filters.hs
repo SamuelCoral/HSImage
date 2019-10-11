@@ -57,6 +57,10 @@ floatToWord8
         | otherwise = round v
 
 
+boolToWord8 :: Bool -> Word8
+boolToWord8 b = if b then 0xFF else 0
+
+
 conv :: E [a] -> (a -> Word8) -> (Word8 -> a) -> (a -> E a) -> ([a] -> a) -> [[a]] -> E Bitmap
 conv mop pop ptr inner outter m b =
     let b' = b & pixels %~ ptr . view red . colorAverage
@@ -81,11 +85,11 @@ nonLinearFilter n s = conv id id id const s $ squareMatrix n 0
 
 
 (<*|*>) :: [[Bool]] -> E Bitmap
-m <*|*> b = conv id (\ p -> if p then 0xFF else 0) (>= 0x80) (&&) or m b
+m <*|*> b = conv id boolToWord8 (>= 0x80) (&&) or m b
 
 
 (<*&*>) :: [[Bool]] -> E Bitmap
-m <*&*> b = conv id (\ p -> if p then 0xFF else 0) (>= 0x80) (\ p q -> not q || p) and m b
+m <*&*> b = conv id boolToWord8 (>= 0x80) (\ p q -> not q || p) and m b
 
 
 median :: (Foldable t, Ord a) => t a -> a
