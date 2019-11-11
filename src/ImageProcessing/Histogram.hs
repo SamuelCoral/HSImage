@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 module ImageProcessing.Histogram where
 
 import qualified Data.Map as Map
@@ -7,32 +8,62 @@ import ImageProcessing.Types
 import ImageProcessing.Geometry
 import ImageProcessing.Color
 import Data.Tuple
+import Data.List
 
 
 type Histogram = Map.Map Word8 Integer
+type HistogramF = Map.Map Word8 Float
 
 
 count :: Ord k => [k] -> Map.Map k Integer
 count = foldr (uncurry $ Map.insertWith $ const succ) Map.empty . flip zip (repeat 1)
 
 
-accumSum :: Num a => [a] -> [a]
-accumSum = accumSumAux 0
-    where   accumSumAux ac (x:xs) =
-                let s = ac + x
-                in  s : accumSumAux s xs
-            accumSumAux _ _ = []
-            
-
 histogram :: E Color -> Bitmap -> Histogram
 histogram method = count . concat . over pixels (view red . method)
 
 
-accumHistogram :: E Color -> Bitmap -> Histogram
-accumHistogram method bitmap =
+accumHistogram :: E [Integer] -> E Color -> Bitmap -> Histogram
+accumHistogram accumulator method bitmap =
     let hist = histogram method bitmap
-        (k, v) = accumSum <$> unzip (Map.toList hist)
+        (k, v) = accumulator <$> unzip (Map.toList hist)
     in Map.fromList $ zip k v
+
+
+accumHistMeans :: (forall a. Num a => E [a]) -> E Color -> Bitmap -> HistogramF
+accumHistMeans accumulator method bitmap =
+    let hist = fromIntegral <$> histogram method bitmap
+        accumHist = fromIntegral <$> accumHistogram accumulator method bitmap
+        pondHist = Map.fromList $ uncurry zip $ fmap accumulator $ unzip $ Map.toList $
+            Map.mapWithKey (\ i h -> fromIntegral i * h) hist
+    in Map.intersectionWith (/) pondHist accumHist
+
+
+accumHistVar :: (forall a. ([a] -> [[a]])) -> (forall a. Num a => E [a]) -> E Color -> Bitmap -> HistogramF
+accumHistVar duplicator accumulator method bitmap = 
+    let hist = fromIntegral <$> histogram method bitmap
+        accumHist = fromIntegral <$> accumHistogram accumulator method bitmap
+        accumHistM = accumHistMeans accumulator method bitmap
+        dupHist = Map.fromList $ zip (Map.keys hist) $ duplicator $ Map.toList hist
+        pondHist = Map.intersectionWith (\ hs m ->
+            sum $ (\ (i, h) -> (fromIntegral i - m)^2 * h ) <$> hs ) dupHist accumHistM
+    in Map.intersectionWith (/) pondHist accumHist
+
+
+otsuVariances :: E Color -> Bitmap -> HistogramF
+otsuVariances method bitmap = Map.intersectionWith (+)
+    (Map.intersectionWith (*)
+        (fromIntegral <$> accumHistogram (scanl1 (+)) method bitmap)
+        (accumHistVar (tail . inits) (scanl1 (+)) method bitmap))
+    (Map.intersectionWith (*)
+        (fromIntegral <$> accumHistogram (tail . scanr (+) 0) method bitmap)
+        (accumHistVar (init . tails) (tail . scanr (+) 0) method bitmap))
+
+
+segmentation :: E Color -> (Bool -> Color) -> E Bitmap
+segmentation method picker bitmap =
+    let minVar = snd $ minimum $ swap <$> Map.toList (otsuVariances method bitmap)
+    in bitmap & pixels %~ picker . (> minVar) . view red . method
 
 
 plotHistogram :: Color -> Histogram -> E Bitmap
@@ -77,6 +108,6 @@ linearEqualization :: E Color -> E Bitmap
 linearEqualization method bitmap =
     let dim = uncurry (*) $ bitmapDimensions bitmap
         b = bitmap & pixels %~ view red . method
-        h = accumHistogram method bitmap <&> (`div` dim) . (*0xFF) . fromInteger
+        h = accumHistogram (scanl1 (+)) method bitmap <&> (`div` dim) . (*0xFF) . fromInteger
     in  b & pixels %~ \ p -> grayScale (toEnum $ h ^. at p . non 0) 1
 
